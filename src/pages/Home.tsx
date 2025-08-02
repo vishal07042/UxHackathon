@@ -254,7 +254,7 @@ const Home = () => {
 					>
 						Why Choose{" "}
 						<span className='bg-gradient-to-r from-neon-blue to-neon-purple bg-clip-text text-transparent'>
-							UXplorer 2025
+							UrbanOrchestrator{" "}
 						</span>
 					</motion.h2>
 

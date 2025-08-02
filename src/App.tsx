@@ -173,8 +173,8 @@ function App() {
 								}}
 								whileHover={{ scale: 1.05 }}
 							>
-								<h1 className='text-2xl font-bold bg-gradient-to-r from-neon-blue to-neon-purple bg-clip-text text-transparent glow-text-neon-blue'>
-									UXplorer 2025
+								<h1 className='text-2xl font-bold bg-clip-text text-white'>
+									UrbanOrchestrator{" "}
 								</h1>
 								<p className='text-xs text-text-secondary'>
 									Urban Mobility Coordination

@@ -204,7 +204,7 @@ const Features = () => {
 									>
 										<feature.icon className='w-8 h-8 text-bg-primary' />
 									</motion.div>
-									<h3 className='text-2xl font-bold mb-3 text-text-primary'>
+									<h3 className='text-2xl font-bold mb-3 text-text-primary text'>
 										{feature.title}
 									</h3>
 									<p className='text-text-secondary mb-4'>
@@ -321,7 +321,7 @@ const Features = () => {
 								transition={{ delay: index * 0.05 }}
 								viewport={{ once: true }}
 							>
-								<div className='font-medium'>
+								<div className='font-medium text-white'>
 									{item.feature}
 								</div>
 								<div className='text-center'>
