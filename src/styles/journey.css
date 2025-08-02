@@ -1,0 +1,226 @@
+/* Journey Page Specific Styles */
+
+/* Component hover effects with proper z-index management */
+.journey-planner-component {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.journey-planner-component:hover {
+  z-index: 30;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.25);
+}
+
+.journey-results-component {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.journey-results-component:hover {
+  z-index: 30;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(34, 197, 94, 0.25);
+}
+
+.smart-suggestions-component {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.smart-suggestions-component:hover {
+  z-index: 30;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(139, 92, 246, 0.25);
+}
+
+.booking-component {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.booking-component:hover {
+  z-index: 30;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(34, 197, 94, 0.25);
+}
+
+.booking-status-component {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.booking-status-component:hover {
+  z-index: 30;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.25);
+}
+
+.multimodal-planner-component {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.multimodal-planner-component:hover {
+  z-index: 30;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(139, 92, 246, 0.25);
+}
+
+.coordination-dashboard-component {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.coordination-dashboard-component:hover {
+  z-index: 30;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -8px rgba(34, 197, 94, 0.25);
+}
+
+/* Map component special hover */
+.map-component {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center;
+}
+
+.map-component:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px -10px rgba(59, 130, 246, 0.3);
+}
+
+/* Smooth transitions for grid layout */
+.journey-grid {
+  display: grid;
+  gap: 1.5rem;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Component spacing and shadow fixes */
+.journey-planner-component,
+.journey-results-component,
+.smart-suggestions-component {
+  margin-bottom: 1.5rem;
+  will-change: transform, box-shadow;
+  backface-visibility: hidden;
+}
+
+/* Prevent shadow clipping */
+.journey-planner-component,
+.journey-results-component,
+.smart-suggestions-component,
+.map-component {
+  isolation: isolate;
+}
+
+/* Vehicle animation */
+.vehicle-icon {
+  transition: transform 0.3s ease-in-out;
+}
+
+.vehicle-icon:hover {
+  transform: scale(1.2) !important;
+  z-index: 1000;
+}
+
+/* Map container enhancements */
+.map-container {
+  position: relative;
+  overflow: visible;
+}
+
+.map-container:hover {
+  z-index: 100;
+}
+
+/* Component stacking */
+.component-stack {
+  position: relative;
+}
+
+.component-stack > * {
+  position: relative;
+  z-index: 1;
+}
+
+.component-stack > *:hover {
+  z-index: 10;
+}
+
+/* Leaflet popup customization */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-tip {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Icon positioning fixes */
+.journey-planner-component .flex.items-center.justify-center,
+.journey-results-component .flex.items-center.justify-center,
+.smart-suggestions-component .flex.items-center.justify-center {
+  min-width: 40px;
+  min-height: 40px;
+}
+
+/* Prevent icon misplacement during animations */
+.journey-planner-component svg,
+.journey-results-component svg,
+.smart-suggestions-component svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Vehicle marker animations */
+@keyframes vehiclePulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
+}
+
+.vehicle-marker {
+  animation: vehiclePulse 2s infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .journey-planner-component:hover,
+  .journey-results-component:hover,
+  .smart-suggestions-component:hover,
+  .booking-component:hover,
+  .booking-status-component:hover,
+  .multimodal-planner-component:hover,
+  .coordination-dashboard-component:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px -6px rgba(59, 130, 246, 0.2);
+  }
+
+  .map-component:hover {
+    transform: none;
+    box-shadow: 0 6px 20px -8px rgba(59, 130, 246, 0.25);
+  }
+}
+
+@media (max-width: 768px) {
+  .journey-planner-component:hover,
+  .journey-results-component:hover,
+  .smart-suggestions-component:hover,
+  .booking-component:hover,
+  .booking-status-component:hover,
+  .multimodal-planner-component:hover,
+  .coordination-dashboard-component:hover,
+  .map-component:hover {
+    transform: none;
+    z-index: auto;
+    box-shadow: none;
+  }
+}

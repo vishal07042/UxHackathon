@@ -1,0 +1,44 @@
+/* Leaflet map styles */
+@import 'leaflet/dist/leaflet.css';
+
+/* Custom marker styles */
+.custom-transport-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Map container styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+/* Popup styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px;
+  line-height: 1.4;
+}
+
+/* Control styles */
+.leaflet-control-zoom a {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-control-zoom a:hover {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+/* Attribution styles */
+.leaflet-control-attribution {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(4px);
+  border-radius: 4px;
+  font-size: 10px;
+}

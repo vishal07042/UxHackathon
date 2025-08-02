@@ -1,178 +1,592 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import JourneyPlanner from '../components/JourneyPlanner';
-import JourneyResults from '../components/JourneyResults';
-import AgentLogs from '../components/AgentLogs';
-import RealtimeUpdates from '../components/RealtimeUpdates';
-import LoadingOverlay from '../components/LoadingOverlay';
-import { PlannerAgent } from '../agents/plannerAgent';
-import { Journey, JourneyPlan, AgentLog, RealtimeUpdate } from '../types';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Navigation, List, Map, Bus, Route, Activity } from "lucide-react";
+import JourneyPlanner from "../components/JourneyPlanner";
+import JourneyResults from "../components/JourneyResults";
+import LoadingOverlay from "../components/LoadingOverlay";
+import UniversalMap, {
+	MapLocation,
+	MapRoute,
+} from "../components/UniversalMap";
+import ErrorBoundary from "../components/ErrorBoundary";
+import SmartSuggestions from "../components/SmartSuggestions";
+import {
+	MobileOptimizedLayout,
+	MobileCard,
+} from "../components/MobileOptimizedLayout";
+import BusBooking from "../components/BusBooking";
+import BookingStatus from "../components/BookingStatus";
+import BookingNotifications, {
+	useBookingNotifications,
+} from "../components/BookingNotifications";
+import MultiModalPlanner from "../components/MultiModalPlanner";
+import AgentCoordinationDashboard from "../components/AgentCoordinationDashboard";
+import { PlannerAgent } from "../agents/plannerAgent";
+import { Journey, JourneyPlan } from "../types";
+import "../styles/journey.css";
+
+const JourneyPageContent = () => {
+	const [currentJourney, setCurrentJourney] = useState<Journey | null>(null);
+	const [journeyPlans, setJourneyPlans] = useState<JourneyPlan[]>([]);
+	const [isPlanning, setIsPlanning] = useState(false);
+	const [mapLocations, setMapLocations] = useState<MapLocation[]>([]);
+	const [mapRoutes, setMapRoutes] = useState<MapRoute[]>([]);
+	const [showBooking, setShowBooking] = useState(false);
+	const [completedBooking, setCompletedBooking] = useState<any>(null);
+	const {
+		notifications,
+		dismissNotification,
+		notifyBookingSuccess,
+		notifyBookingFailed,
+	} = useBookingNotifications();
+
+	const plannerAgent = new PlannerAgent();
+
+	const handleJourneyPlan = async (journey: Journey) => {
+		setIsPlanning(true);
+		setCurrentJourney(journey);
+		setJourneyPlans([]);
+
+		try {
+			// Plan the journey
+			const result = await plannerAgent.planJourney(journey, {
+				onAgentLog: () => {}, // Simplified - no logs
+				onRealtimeUpdate: () => {}, // Simplified - no updates
+			});
+
+			setJourneyPlans(result.plans);
+
+			// Update map with journey locations
+			await updateMapLocations(journey, result.plans);
+		} catch (error) {
+			console.error("Journey planning failed:", error);
+		} finally {
+			setIsPlanning(false);
+		}
+	};
+
+	const updateMapLocations = async (
+		journey: Journey,
+		plans: JourneyPlan[]
+	) => {
+		try {
+			// Import geocoding function
+			const { geocodeLocation } = await import(
+				"../components/UniversalMap"
+			);
+
+			const locations: MapLocation[] = [];
+			const routes: MapRoute[] = [];
+
+			// Geocode origin and destination
+			const originLocation = await geocodeLocation(journey.source);
+			const destinationLocation = await geocodeLocation(
+				journey.destination
+			);
+
+			if (originLocation) {
+				locations.push({
+					...originLocation,
+					type: "origin",
+				});
+			}
+
+			if (destinationLocation) {
+				locations.push({
+					...destinationLocation,
+					type: "destination",
+				});
+			}
+
+			// Add route visualization for the best plan
+			if (plans.length > 0 && originLocation && destinationLocation) {
+				routes.push({
+					id: "main-route",
+					name: "Journey Route",
+					coordinates: [
+						[originLocation.latitude, originLocation.longitude],
+						[
+							destinationLocation.latitude,
+							destinationLocation.longitude,
+						],
+					],
+					color: "#3b82f6",
+					mode: "mixed",
+				});
+			}
+
+			setMapLocations(locations);
+			setMapRoutes(routes);
+		} catch (error) {
+			console.error("Failed to update map locations:", error);
+		}
+	};
+
+	const handleApplySuggestion = (suggestion: any) => {
+		console.log("Applying suggestion:", suggestion);
+		// Here you would implement the logic to apply the suggestion
+		// For example, re-planning with different parameters
+		if (currentJourney) {
+			const modifiedJourney = { ...currentJourney };
+
+			if (suggestion.action?.data?.departureOffset) {
+				const newDepartureTime = new Date(currentJourney.departureTime);
+				newDepartureTime.setMinutes(
+					newDepartureTime.getMinutes() +
+						suggestion.action.data.departureOffset
+				);
+				modifiedJourney.departureTime = newDepartureTime;
+			}
+
+			if (suggestion.action?.data?.weatherOptimized) {
+				modifiedJourney.preference = "comfortable";
+			}
+
+			// Re-plan with modified journey
+			handleJourneyPlan(modifiedJourney);
+		}
+	};
+
+	const handleBookingComplete = (bookingDetails: any) => {
+		setCompletedBooking(bookingDetails);
+		setShowBooking(false);
+
+		// Show success notification
+		if (bookingDetails.success) {
+			notifyBookingSuccess(bookingDetails);
+		} else {
+			notifyBookingFailed(bookingDetails.error || "Booking failed");
+		}
+	};
+
+	const pageVariants = {
+		initial: { opacity: 0, y: 20 },
+		animate: {
+			opacity: 1,
+			y: 0,
+			transition: {
+				duration: 0.6,
+				ease: "easeOut",
+			},
+		},
+		exit: {
+			opacity: 0,
+			y: -20,
+			transition: {
+				duration: 0.3,
+			},
+		},
+	};
+
+	return (
+		<motion.div
+			variants={pageVariants}
+			initial='initial'
+			animate='animate'
+			exit='exit'
+			className='min-h-screen'
+		>
+			{/* Loading Overlay */}
+			<AnimatePresence>
+				{isPlanning && <LoadingOverlay />}
+			</AnimatePresence>
+
+			<main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+				{/* Desktop Layout */}
+				<motion.div className='hidden lg:grid lg:grid-cols-2 gap-8 min-h-[calc(100vh-200px)] items-start'>
+					{/* Left Half - Journey Planner & Results */}
+					<motion.div
+						className='space-y-6 w-full'
+						initial={{ x: -100, opacity: 0 }}
+						animate={{ x: 0, opacity: 1 }}
+						transition={{
+							delay: 0.2,
+							type: "spring",
+							stiffness: 100,
+						}}
+					>
+						{/* Journey Planner */}
+						<motion.div
+							className='journey-planner-component relative z-10'
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.1 }}
+						>
+							<JourneyPlanner
+								onPlan={handleJourneyPlan}
+								isPlanning={isPlanning}
+							/>
+						</motion.div>
+
+						{/* Journey Results */}
+						<motion.div
+							className='journey-results-component relative z-10'
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.2 }}
+						>
+							<JourneyResults
+								plans={journeyPlans}
+								isLoading={isPlanning}
+								journey={currentJourney}
+								onBookBus={() => setShowBooking(true)}
+							/>
+						</motion.div>
+
+						{/* Multi-Modal Planner */}
+						{!showBooking && !completedBooking && (
+							<motion.div
+								className='multimodal-planner-component relative z-10'
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.3 }}
+							>
+								<MultiModalPlanner
+									initialOrigin={currentJourney?.source || ""}
+									initialDestination={
+										currentJourney?.destination || ""
+									}
+									onJourneySelected={(journey) => {
+										console.log(
+											"Journey selected:",
+											journey
+										);
+									}}
+								/>
+							</motion.div>
+						)}
+
+						{/* Smart Suggestions */}
+						{currentJourney &&
+							journeyPlans.length > 0 &&
+							!showBooking && (
+								<motion.div
+									className='smart-suggestions-component relative z-10'
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ delay: 0.4 }}
+								>
+									<SmartSuggestions
+										journey={currentJourney}
+										currentPlans={journeyPlans}
+										onApplySuggestion={
+											handleApplySuggestion
+										}
+										isVisible={!isPlanning}
+									/>
+								</motion.div>
+							)}
+
+						{/* Bus Booking */}
+						{showBooking && (
+							<motion.div
+								className='booking-component relative z-10'
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.3 }}
+							>
+								<BusBooking
+									initialSource={currentJourney?.source || ""}
+									initialDestination={
+										currentJourney?.destination || ""
+									}
+									onBookingComplete={handleBookingComplete}
+								/>
+							</motion.div>
+						)}
+
+						{/* Booking Status */}
+						{completedBooking && (
+							<motion.div
+								className='booking-status-component relative z-10'
+								initial={{ opacity: 0, y: 20 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{ delay: 0.3 }}
+							>
+								<BookingStatus
+									booking={completedBooking}
+									onClose={() => setCompletedBooking(null)}
+								/>
+							</motion.div>
+						)}
+
+						{/* Agent Coordination Dashboard */}
+						<motion.div
+							className='coordination-dashboard-component relative z-10'
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ delay: 0.5 }}
+						>
+							<AgentCoordinationDashboard />
+						</motion.div>
+					</motion.div>
+
+					{/* Right Half - Large Map */}
+					<motion.div
+						className='w-full h-full'
+						initial={{ x: 100, opacity: 0 }}
+						animate={{ x: 0, opacity: 1 }}
+						transition={{
+							delay: 0.3,
+							type: "spring",
+							stiffness: 100,
+						}}
+					>
+						<motion.div
+							className='map-component bg-surface-overlay/90 backdrop-blur-lg rounded-3xl shadow-elevation-medium p-4 border border-border-secondary sticky top-8 w-full h-[calc(100vh-200px)] z-20'
+							initial={{ opacity: 0, scale: 0.95 }}
+							animate={{ opacity: 1, scale: 1 }}
+							transition={{ delay: 0.4 }}
+						>
+							<motion.div
+								className='flex items-center justify-between mb-6 w-full px-2'
+								initial={{ y: -20, opacity: 0 }}
+								animate={{ y: 0, opacity: 1 }}
+								transition={{ delay: 0.4 }}
+							>
+								<div>
+									<h3 className='text-lg font-bold text-text-primary'>
+										Live Journey Map
+									</h3>
+									<p className='text-sm text-text-secondary'>
+										Interactive route & vehicle tracking
+									</p>
+								</div>
+								<motion.div
+									className='flex items-center gap-2'
+									whileHover={{ scale: 1.05 }}
+								>
+									<motion.div
+										className='w-2 h-2 bg-neon-green rounded-full'
+										animate={{ opacity: [1, 0.3, 1] }}
+										transition={{
+											duration: 2,
+											repeat: Infinity,
+										}}
+									/>
+									<span className='text-xs font-medium text-neon-green'>
+										Live Tracking
+									</span>
+								</motion.div>
+							</motion.div>
+
+							<div className='h-[calc(100vh-300px)] rounded-2xl overflow-hidden'>
+								<UniversalMap
+									locations={mapLocations}
+									routes={mapRoutes}
+									showSearch={true}
+									showVehicles={true}
+									showTraffic={true}
+									showTrafficControls={true}
+									journey={currentJourney}
+									className='h-full w-full'
+								/>
+							</div>
+						</motion.div>
+					</motion.div>
+				</motion.div>
+
+				{/* Mobile Layout */}
+				<div className='lg:hidden'>
+					<MobileOptimizedLayout
+						tabs={[
+							{
+								id: "planner",
+								label: "Plan",
+								icon: <Navigation className='w-5 h-5' />,
+								component: (
+									<div className='p-4 space-y-4'>
+										<MobileCard
+											title='Plan Your Journey'
+											subtitle='Smart AI-powered route optimization'
+											icon={
+												<Navigation className='w-5 h-5 text-white' />
+											}
+										>
+											<JourneyPlanner
+												onPlan={handleJourneyPlan}
+												isPlanning={isPlanning}
+											/>
+										</MobileCard>
+									</div>
+								),
+							},
+							{
+								id: "results",
+								label: "Routes",
+								icon: <List className='w-5 h-5' />,
+								component: (
+									<div className='p-4 space-y-4'>
+										<MobileCard
+											title='Journey Options'
+											subtitle={`${journeyPlans.length} routes found`}
+											collapsible={false}
+										>
+											<JourneyResults
+												plans={journeyPlans}
+												isLoading={isPlanning}
+												journey={currentJourney}
+											/>
+										</MobileCard>
+
+										{currentJourney &&
+											journeyPlans.length > 0 && (
+												<MobileCard
+													title='Smart Suggestions'
+													subtitle='AI-powered recommendations'
+													collapsible={true}
+													defaultExpanded={false}
+												>
+													<SmartSuggestions
+														journey={currentJourney}
+														currentPlans={
+															journeyPlans
+														}
+														onApplySuggestion={
+															handleApplySuggestion
+														}
+														isVisible={!isPlanning}
+													/>
+												</MobileCard>
+											)}
+									</div>
+								),
+							},
+							{
+								id: "multimodal",
+								label: "Multi-Modal",
+								icon: <Route className='w-5 h-5' />,
+								component: (
+									<div className='p-4 space-y-4'>
+										<MobileCard
+											title='Multi-Modal Journey Planner'
+											subtitle='AI-powered collaborative transportation'
+											collapsible={false}
+										>
+											<MultiModalPlanner
+												initialOrigin={
+													currentJourney?.source || ""
+												}
+												initialDestination={
+													currentJourney?.destination ||
+													""
+												}
+												onJourneySelected={(
+													journey
+												) => {
+													console.log(
+														"Journey selected:",
+														journey
+													);
+												}}
+											/>
+										</MobileCard>
+									</div>
+								),
+							},
+							{
+								id: "booking",
+								label: "Book",
+								icon: <Bus className='w-5 h-5' />,
+								component: (
+									<div className='p-4 space-y-4'>
+										{!completedBooking ? (
+											<MobileCard
+												title='Bus Booking'
+												subtitle='AI-powered smart booking'
+												collapsible={false}
+											>
+												<BusBooking
+													initialSource={
+														currentJourney?.source ||
+														""
+													}
+													initialDestination={
+														currentJourney?.destination ||
+														""
+													}
+													onBookingComplete={
+														handleBookingComplete
+													}
+												/>
+											</MobileCard>
+										) : (
+											<MobileCard
+												title='Booking Confirmed'
+												subtitle={`PNR: ${completedBooking.pnr}`}
+												collapsible={false}
+											>
+												<BookingStatus
+													booking={completedBooking}
+													onClose={() =>
+														setCompletedBooking(
+															null
+														)
+													}
+													showFullDetails={true}
+												/>
+											</MobileCard>
+										)}
+									</div>
+								),
+							},
+							{
+								id: "coordination",
+								label: "Agents",
+								icon: <Activity className='w-5 h-5' />,
+								component: (
+									<div className='p-4 space-y-4'>
+										<MobileCard
+											title='Agent Coordination'
+											subtitle='Real-time transportation collaboration'
+											collapsible={false}
+										>
+											<AgentCoordinationDashboard />
+										</MobileCard>
+									</div>
+								),
+							},
+							{
+								id: "map",
+								label: "Map",
+								icon: <Map className='w-5 h-5' />,
+								component: (
+									<div className='h-full'>
+										<UniversalMap
+											locations={mapLocations}
+											routes={mapRoutes}
+											showSearch={true}
+											showVehicles={true}
+											showTraffic={true}
+											showTrafficControls={true}
+											journey={currentJourney}
+											className='h-full w-full'
+										/>
+									</div>
+								),
+							},
+						]}
+						defaultTab='planner'
+					/>
+				</div>
+			</main>
+
+			{/* Booking Notifications */}
+			<BookingNotifications
+				notifications={notifications}
+				onDismiss={dismissNotification}
+				position='top-right'
+			/>
+		</motion.div>
+	);
+};
 
 const JourneyPage = () => {
-  const [currentJourney, setCurrentJourney] = useState<Journey | null>(null);
-  const [journeyPlans, setJourneyPlans] = useState<JourneyPlan[]>([]);
-  const [agentLogs, setAgentLogs] = useState<AgentLog[]>([]);
-  const [realtimeUpdates, setRealtimeUpdates] = useState<RealtimeUpdate[]>([]);
-  const [isPlanning, setIsPlanning] = useState(false);
-
-  const plannerAgent = new PlannerAgent();
-
-  const handleJourneyPlan = async (journey: Journey) => {
-    setIsPlanning(true);
-    setCurrentJourney(journey);
-    setJourneyPlans([]);
-    setAgentLogs([]);
-    setRealtimeUpdates([]);
-
-    try {
-      const result = await plannerAgent.planJourney(journey, {
-        onAgentLog: (log) => setAgentLogs(prev => [...prev, log]),
-        onRealtimeUpdate: (update) => setRealtimeUpdates(prev => [...prev, update])
-      });
-
-      setJourneyPlans(result.plans);
-      
-      // Simulate real-time updates after initial planning
-      setTimeout(() => simulateRealtimeUpdates(result.plans), 3000);
-    } catch (error) {
-      console.error('Journey planning failed:', error);
-    } finally {
-      setIsPlanning(false);
-    }
-  };
-
-  const simulateRealtimeUpdates = async (plans: JourneyPlan[]) => {
-    // Simulate metro delay
-    const delayUpdate: RealtimeUpdate = {
-      id: Date.now().toString(),
-      type: 'delay',
-      agent: 'Metro',
-      message: 'Metro Line 2 experiencing 5-minute delay',
-      timestamp: new Date(),
-      severity: 'warning'
-    };
-    
-    setRealtimeUpdates(prev => [...prev, delayUpdate]);
-
-    // Trigger re-planning
-    if (currentJourney) {
-      setTimeout(async () => {
-        const replanUpdate: RealtimeUpdate = {
-          id: (Date.now() + 1).toString(),
-          type: 'replanning',
-          agent: 'Planner',
-          message: 'Re-calculating optimal routes due to metro delay...',
-          timestamp: new Date(),
-          severity: 'info'
-        };
-        
-        setRealtimeUpdates(prev => [...prev, replanUpdate]);
-
-        const result = await plannerAgent.replanJourney(currentJourney, delayUpdate, {
-          onAgentLog: (log) => setAgentLogs(prev => [...prev, log]),
-          onRealtimeUpdate: (update) => setRealtimeUpdates(prev => [...prev, update])
-        });
-
-        setJourneyPlans(result.plans);
-      }, 2000);
-    }
-  };
-
-  const pageVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { 
-      opacity: 1, 
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      y: -20,
-      transition: {
-        duration: 0.3
-      }
-    }
-  };
-
-  return (
-    <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className="min-h-screen"
-    >
-      {/* Loading Overlay */}
-      <AnimatePresence>
-        {isPlanning && <LoadingOverlay />}
-      </AnimatePresence>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <motion.div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Left Column - Journey Planner */}
-          <motion.div 
-            className="xl:col-span-1 space-y-8"
-            initial={{ x: -100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
-          >
-            <JourneyPlanner onPlan={handleJourneyPlan} isPlanning={isPlanning} />
-            
-            {/* Agent Logs */}
-            <AnimatePresence>
-              {agentLogs.length > 0 && (
-                <motion.div
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -50, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 100 }}
-                >
-                  <AgentLogs logs={agentLogs} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-
-          {/* Right Columns - Results and Updates */}
-          <motion.div 
-            className="xl:col-span-2 space-y-8"
-            initial={{ x: 100, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
-          >
-            {/* Real-time Updates */}
-            <AnimatePresence>
-              {realtimeUpdates.length > 0 && (
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                >
-                  <RealtimeUpdates updates={realtimeUpdates} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Journey Results */}
-            <motion.div
-              layout
-              transition={{ type: "spring", stiffness: 100, damping: 20 }}
-            >
-              <JourneyResults 
-                plans={journeyPlans} 
-                isLoading={isPlanning}
-                journey={currentJourney}
-              />
-            </motion.div>
-          </motion.div>
-        </motion.div>
-      </main>
-    </motion.div>
-  );
+	return (
+		<ErrorBoundary>
+			<JourneyPageContent />
+		</ErrorBoundary>
+	);
 };
 
 export default JourneyPage;

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon } from "lucide-react";
 import Home from "./pages/Home";
 import JourneyPage from "./pages/JourneyPage";
+import VBBJourneyPage from "./pages/VBBJourneyPage";
 import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
 import Features from "./pages/Features";
@@ -195,6 +196,7 @@ function App() {
 									path: "/journey-planner",
 									label: "Journey Planner",
 								},
+								
 								{ path: "/about", label: "About" },
 								{
 									path: "/how-it-works",
@@ -271,6 +273,7 @@ function App() {
 				<Routes location={location} key={location.pathname}>
 					<Route path='/' element={<Home />} />
 					<Route path='/journey-planner' element={<JourneyPage />} />
+					<Route path='/vbb-planner' element={<VBBJourneyPage />} />
 					<Route path='/about' element={<About />} />
 					<Route path='/how-it-works' element={<HowItWorks />} />
 					<Route path='/features' element={<Features />} />

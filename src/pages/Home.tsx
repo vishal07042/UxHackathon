@@ -172,13 +172,14 @@ const Home = () => {
 							variants={fadeInUp}
 							className='flex flex-wrap justify-center gap-4 mb-12'
 						>
+							
 							<Link to='/journey-planner'>
 								<motion.button
 									whileHover={{ scale: 1.05 }}
 									whileTap={{ scale: 0.95 }}
 									className='px-8 py-4 bg-gradient-to-r from-neon-blue to-neon-purple text-bg-primary rounded-xl font-semibold shadow-glow-neon-blue hover:shadow-glow-neon-purple transition-shadow flex items-center gap-2'
 								>
-									Start Planning{" "}
+									Demo Planner{" "}
 									<ArrowRight className='w-5 h-5' />
 								</motion.button>
 							</Link>
@@ -198,7 +199,9 @@ const Home = () => {
 							variants={staggerContainer}
 							className='flex justify-center gap-8 mb-16'
 						>
+							
 							{transportModes.map((mode) => (
+								<Link to='/journey-planner'>
 								<motion.div
 									key={mode.name}
 									variants={scaleIn}
@@ -211,8 +214,9 @@ const Home = () => {
 								>
 									<mode.icon
 										className={`w-12 h-12 ${mode.color}`}
-									/>
+									/>	
 								</motion.div>
+								</Link>
 							))}
 						</motion.div>
 					</div>
